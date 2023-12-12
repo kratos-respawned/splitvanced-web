@@ -38,7 +38,7 @@ export async function POST(req: Request) {
       to: [newUser.email],
       subject: "Verification Link",
       react: VerificationEmail({
-        url: `http://localhost:3001/verify?token=${token}`,
+        url: `http://localhost:3000/api/verify?token=${token}`,
       }),
     });
     return new Response(JSON.stringify("Please Check the Mail"), {
