@@ -1,62 +1,82 @@
 import { VerificationEmail } from "@/emails/verification-mail";
+import { formatZodError } from "@/errors/zod-error";
 import { db } from "@/lib/db";
 import { env } from "@/lib/env.mjs";
+import { APIErrorHandler } from "@/lib/error-handler";
 import { decrypt, encrypt } from "@/lib/jwt";
 import { resend } from "@/lib/resend";
 import { MailJWTPayload } from "@/typings/email-types";
 import { signInValidator } from "@/validatiors/userschema";
-import { ZodError } from "zod";
+import { User } from "@prisma/client";
+import bcrypt from "bcrypt";
 
 export async function POST(req: Request) {
   try {
     const reqJSON = await req.json();
     const { email, password } = signInValidator.parse(reqJSON);
-    const user = await db.user.findUnique({ where: { email, password } });
-    if (user && user.isVerified) {
-      return new Response(JSON.stringify(user), { status: 200 });
-    } else if (user && !user.isVerified) {
-      return new Response(JSON.stringify("Please Verify your Email"), {
-        status: 400,
-      });
-    }
-    const newUser = await db.user.create({
-      data: {
-        email,
-        password,
-        name: email.split("@")[0],
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      },
-    });
-
-    const token = await encrypt<MailJWTPayload>(
-      { id: newUser.id },
-      env.EMAIL_KEY
-    );
-    const mailResp = await resend.emails.send({
-      from: "splitvanced@itsgaurav.co",
-      to: [newUser.email],
-      subject: "Verification Link",
-      react: VerificationEmail({
-        url: `http://localhost:3000/api/verify?token=${token}`,
-      }),
-    });
-    return new Response(JSON.stringify("Please Check the Mail"), {
-      status: 200,
-    });
+    const user = await db.user.findUnique({ where: { email } });
+    if (user) return ResponseFromOldUserHandler(user, password);
+    else return ResponseFromNewUserHandler(email, password);
   } catch (e) {
-    let error: string = "Something went wrong";
-    if (e instanceof ZodError) {
-      error = e.issues.map((issue) => issue.message).join("\n");
-      return new Response(error, { status: 400 });
-    }
-    return new Response(JSON.stringify(e), { status: 400 });
+    return APIErrorHandler(e);
   }
 }
 
+const ResponseFromOldUserHandler = async (user: User, password: string) => {
+  const match = await bcrypt.compare(password, user.password);
+  if (!match) {
+    return new Response(JSON.stringify("Invalid Password"), { status: 400 });
+  }
+  if (user.isVerified) {
+    return new Response(JSON.stringify(user), { status: 400 });
+  } else {
+    return new Response(JSON.stringify("Please Verify Your Email"), {
+      status: 400,
+    });
+  }
+};
+
+const ResponseFromNewUserHandler = async (email: string, password: string) => {
+  const hashedPassword = await bcrypt.hash(password, 10);
+  const newUser = await db.user.create({
+    data: {
+      email,
+      password: hashedPassword,
+      name: email.split("@")[0],
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    },
+  });
+
+  const token = await encrypt<MailJWTPayload>(
+    { id: newUser.id },
+    env.EMAIL_KEY
+  );
+  const mailResp = await resend.emails.send({
+    from: "splitvanced@itsgaurav.co",
+    to: [newUser.email],
+    subject: "Verification Link",
+    react: VerificationEmail({
+      url: `http://localhost:3000/api/verify?token=${token}`,
+    }),
+  });
+  if (mailResp.error) {
+    console.log(mailResp.error);
+    return new Response("Error Sending Mail", { status: 400 });
+  }
+  return new Response("Please check your mail for the verification link", {
+    status: 200,
+  });
+};
+
+// ONly for testing
 export async function GET(req: Request) {
   try {
-    const data = await db.user.findMany();
+    const data = await db.user.findMany({
+      where: {
+        isVerified: true,
+      },
+    });
     return Response.json(data);
   } catch (e) {
     return new Response(JSON.stringify(e), { status: 400 });
