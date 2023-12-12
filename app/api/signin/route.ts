@@ -72,11 +72,7 @@ const ResponseFromNewUserHandler = async (email: string, password: string) => {
 // ONly for testing
 export async function GET(req: Request) {
   try {
-    const data = await db.user.findMany({
-      where: {
-        isVerified: true,
-      },
-    });
+    const data = await db.user.findMany({});
     return Response.json(data);
   } catch (e) {
     return new Response(JSON.stringify(e), { status: 400 });
