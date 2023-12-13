@@ -2,9 +2,12 @@ import { Footer } from "@/components/footer";
 import { Navbar } from "@/components/navbar";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { cookies } from "next/headers";
 import Link from "next/link";
 
 export default function Home() {
+  const cookie=cookies().get('token');
+
   return (
     <main className=" h-screen pb-28 px-7 ">
       <Navbar />

@@ -9,6 +9,7 @@ import { MailJWTPayload } from "@/typings/email-types";
 import { signInValidator } from "@/validatiors/userschema";
 import { User } from "@prisma/client";
 import bcrypt from "bcrypt";
+import { NextResponse } from "next/server";
 
 export async function POST(req: Request) {
   try {
@@ -28,7 +29,19 @@ const ResponseFromOldUserHandler = async (user: User, password: string) => {
     return new Response(JSON.stringify("Invalid Password"), { status: 400 });
   }
   if (user.isVerified) {
-    return new Response(JSON.stringify(user), { status: 400 });
+    const token = await encrypt<MailJWTPayload>({ id: user.id }, env.SECRET_KEY)
+    return Response.json({
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      createdAt: user.createdAt,
+      updatedAt: user.updatedAt,
+    }, { 
+      status: 200,
+      headers: {
+        'Set-Cookie': `token=${token}; Path=/`,
+      }
+    });
   } else {
     return new Response(JSON.stringify("Please Verify Your Email"), {
       status: 400,

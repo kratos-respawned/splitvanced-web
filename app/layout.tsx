@@ -5,6 +5,7 @@ import "./globals.css";
 import { ThemeProvider } from "@/components/ui/theme-provider";
 import { cn } from "@/lib/utils";
 import { GeistSans } from "geist/font/sans";
+import { Toaster } from "@/components/ui/toaster";
 
 const fontSans = Montserrat({
   subsets: ["latin"],
@@ -45,6 +46,7 @@ export default function RootLayout({
       >
         <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
           {children}
+          <Toaster/>
         </ThemeProvider>
       </body>
     </html>
