@@ -3,6 +3,7 @@ import { env } from "@/lib/env.mjs";
 import { APIErrorHandler } from "@/lib/error-handler";
 import { decrypt } from "@/lib/jwt";
 import { MailJWTPayload } from "@/typings/email-types";
+import { SignInResponse } from "@/typings/signin-response-types";
 import { PrismaClientKnownRequestError } from "@prisma/client/runtime/library";
 import { JOSEError } from "jose/errors";
 
@@ -29,6 +30,22 @@ export async function GET(request: Request) {
     });
     return new Response(`Hello ${user.name}`);
   } catch (error) {
-    return APIErrorHandler(error);
+    const errMessage = APIErrorHandler(error);
+    if (errMessage)
+      return Response.json(
+        {
+          status: "unauthenticated",
+          error: errMessage,
+        } as SignInResponse,
+        { status: 400 }
+      );
+    else
+      return Response.json(
+        {
+          status: "unauthenticated",
+          error: "Something went wrong",
+        } as SignInResponse,
+        { status: 500 }
+      );
   }
 }

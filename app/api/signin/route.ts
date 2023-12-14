@@ -6,10 +6,10 @@ import { APIErrorHandler } from "@/lib/error-handler";
 import { decrypt, encrypt } from "@/lib/jwt";
 import { resend } from "@/lib/resend";
 import { MailJWTPayload } from "@/typings/email-types";
+import { SignInResponse } from "@/validatiors/signinResponse-schema";
 import { signInValidator } from "@/validatiors/userschema";
 import { User } from "@prisma/client";
 import bcrypt from "bcrypt";
-import { NextResponse } from "next/server";
 
 export async function POST(req: Request) {
   try {
@@ -19,33 +19,31 @@ export async function POST(req: Request) {
     if (user) return ResponseFromOldUserHandler(user, password);
     else return ResponseFromNewUserHandler(email, password);
   } catch (e) {
-    return APIErrorHandler(e);
+    let resp: SignInResponse;
+    const errMessage = APIErrorHandler(e);
+    if (errMessage) {
+      return SignedResponse("unauthenticated", undefined, errMessage);
+    } else return SignedResponse("unauthenticated");
   }
 }
 
 const ResponseFromOldUserHandler = async (user: User, password: string) => {
   const match = await bcrypt.compare(password, user.password);
   if (!match) {
-    return new Response(JSON.stringify("Invalid Password"), { status: 400 });
+    return SignedResponse("unauthenticated", undefined, "Invalid password");
   }
   if (user.isVerified) {
-    const token = await encrypt<MailJWTPayload>({ id: user.id }, env.SECRET_KEY)
-    return Response.json({
-      id: user.id,
-      email: user.email,
-      name: user.name,
-      createdAt: user.createdAt,
-      updatedAt: user.updatedAt,
-    }, { 
-      status: 200,
-      headers: {
-        'Set-Cookie': `token=${token}; Path=/`,
-      }
+    const token = await encrypt<MailJWTPayload>(
+      { id: user.id },
+      env.SECRET_KEY
+    );
+    return SignedResponse("authenticated", user, undefined, {
+      "Set-Cookie": `token=${token}; path=/; HttpOnly; Max-Age=${
+        60 * 60 * 24 * 7
+      }`,
     });
   } else {
-    return new Response(JSON.stringify("Please Verify Your Email"), {
-      status: 400,
-    });
+    return SignedResponse("unverified", undefined, "Please verify your email");
   }
 };
 
@@ -65,21 +63,19 @@ const ResponseFromNewUserHandler = async (email: string, password: string) => {
     { id: newUser.id },
     env.EMAIL_KEY
   );
-  const mailResp = await resend.emails.send({
-    from: "splitvanced@itsgaurav.co",
-    to: [newUser.email],
-    subject: "Verification Link",
-    react: VerificationEmail({
-      url: `http://localhost:3000/api/verify?token=${token}`,
-    }),
-  });
-  if (mailResp.error) {
-    console.log(mailResp.error);
-    return new Response("Error Sending Mail", { status: 400 });
-  }
-  return new Response("Please check your mail for the verification link", {
-    status: 200,
-  });
+  // const mailResp = await resend.emails.send({
+  //   from: "splitvanced@itsgaurav.co",
+  //   to: [newUser.email],
+  //   subject: "Verification Link",
+  //   react: VerificationEmail({
+  //     url: `http://localhost:3000/api/verify?token=${token}`,
+  //   }),
+  // });
+  // if (mailResp.error) {
+  //   console.log(mailResp.error);
+  //   return SignedResponse("unauthenticated", undefined, "Something went wrong");
+  // }
+  return SignedResponse("unverified", undefined, "Please verify your email");
 };
 
 // ONly for testing
@@ -91,3 +87,42 @@ export async function GET(req: Request) {
     return new Response(JSON.stringify(e), { status: 400 });
   }
 }
+
+const SignedResponse = (
+  status: "unverified" | "authenticated" | "unauthenticated",
+  user?: User,
+  error?: string,
+  headers?: HeadersInit
+) => {
+  let resp: SignInResponse = {
+    status: "unauthenticated",
+    error: "Something went wrong",
+  };
+  let code: 200 | 400 | 500 = 500;
+  if (status === "authenticated" && user) {
+    resp = {
+      status: "authenticated",
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        createdAt: String(user.createdAt),
+        updatedAt: String(user.updatedAt),
+      },
+    };
+    code = 200;
+  } else if (status === "unauthenticated" && error) {
+    resp = {
+      status: "unauthenticated",
+      error,
+    };
+    code = 400;
+  } else if (status === "unverified" && error) {
+    resp = {
+      status: "unverified",
+      error,
+    };
+    code = 200;
+  }
+  return Response.json(resp, { status: code, headers });
+};

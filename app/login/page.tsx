@@ -1,5 +1,4 @@
 "use client";
-// import { Icons } from "@/components/Icons";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -12,80 +11,113 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/components/ui/use-toast";
-
-import { useSearchParams } from "next/navigation";
-
+import { SignInValidator, signInValidator } from "@/validatiors/userschema";
 import { useEffect, useRef, useState } from "react";
-type OAuthProviders = "github" | "google";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { SignInResponseSchema } from "@/validatiors/signinResponse-schema";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 export default function Login() {
-  const [isLoading, setIsLoading] = useState<boolean>(false);
-  const mailRef = useRef<HTMLInputElement>(null);
-  const searchParams = useSearchParams();
   const { toast } = useToast();
-
-  useEffect(() => {
-    fetch('/api/signin', {
-      method: 'POST',
-      body: JSON.stringify({
-        "email": "pallabsonowal999@gmail.com",
-        "password": "randompassword",
-      })
-    })
-  }, [])
-  
+  const router = useRouter();
+  const form = useForm<SignInValidator>({
+    resolver: zodResolver(signInValidator),
+    defaultValues: {
+      email: "",
+      password: "",
+    },
+  });
+  const onSubmit = async (creds: SignInValidator) => {
+    const resp = await fetch("/api/signin", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(creds),
+    });
+    const json = await resp.json();
+    try {
+      const data = SignInResponseSchema.parse(json);
+      if (data.status === "authenticated") {
+        toast({
+          title: "Success",
+          description: "You have been logged in",
+        });
+        router.push("/");
+      } else if (data.status === "unauthenticated") {
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: data.error,
+        });
+      } else if (data.status === "unverified") {
+        toast({
+          title: "Verify your email",
+          description: data.error,
+        });
+      }
+    } catch (e) {
+      console.log(e);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Something went wrong",
+      });
+    }
+  };
   return (
-    <main className="grid w-full h-screen place-item-center">
-    <Card className=" max-w-lg w-full">
-      <CardHeader className="space-y-1">
-        <CardTitle className="text-2xl">Login</CardTitle>
-        <CardDescription>Enter your email below to login</CardDescription>
-      </CardHeader>
-      <CardContent className="grid gap-4">
-        <div className="grid grid-cols-2 gap-6">
-          <Button
-            disabled={isLoading}
-            
-            variant="outline"
-          >
-            {/* <Icons.github className="mr-2 h-4 w-4" /> */}
-            Github
-          </Button>
-          <Button
-            disabled={isLoading}
-            
-            variant="outline"
-          >
-            {/* <Icons.google className="mr-2 h-4 w-4" /> */}
-            Google
-          </Button>
-        </div>
-        <div className="relative">
-          <div className="absolute inset-0 flex items-center">
-            <span className="w-full border-t" />
-          </div>
-          <div className="relative flex justify-center text-xs uppercase">
-            <span className="bg-background px-2 text-muted-foreground">
-              Or continue with
-            </span>
-          </div>
-        </div>
-        <div className="grid gap-2">
-          <Label htmlFor="email">Email</Label>
-          <Input
-            required
-            ref={mailRef}
-            id="email"
-            type="email"
-            placeholder="m@example.com"
-          />
-        </div>
-      </CardContent>
-      <CardFooter>
-        <Button  disabled={isLoading} className="w-full">
-          Login
-        </Button>
-      </CardFooter>
-    </Card>
+    <main className=" min-h-screen grid place-items-center px-4">
+      <Card className=" max-w-lg w-full">
+        <CardHeader className="space-y-1">
+          <CardTitle className="text-2xl">Login</CardTitle>
+          <CardDescription>Enter your email below to login</CardDescription>
+        </CardHeader>
+        <CardContent className="grid gap-4">
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              <FormField
+                control={form.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Email</FormLabel>
+                    <FormControl>
+                      <Input placeholder="alan.turing@example.com" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="password"
+                render={({ field }) => (
+                  <FormItem className="">
+                    <FormLabel>Password</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Something Secure" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <Button className="w-full" type="submit">
+                Submit
+              </Button>
+            </form>
+          </Form>
+        </CardContent>
+      </Card>
     </main>
   );
 }
