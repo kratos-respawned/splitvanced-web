@@ -10,7 +10,9 @@ import { db } from "@/lib/db";
 import { User } from "@prisma/client";
 import { Suspense } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
-import { unstable_noStore } from "next/cache";
+import { revalidatePath, unstable_noStore } from "next/cache";
+import { getServerSession } from "@/lib/server-session";
+import { LogoutButton } from "@/app/api/logout/logout-button";
 export const Navbar = async () => {
   return (
     <header className="absolute inset-x-0 top-0 flex items-center justify-between px-4 pt-8 md:px-20">
@@ -31,24 +33,11 @@ export const Navbar = async () => {
 };
 
 const NavbarLogin = async () => {
-  let user: User | null = null;
-  const token = cookies().get("token");
-  unstable_noStore();
-  if (token) {
-    const payload = await decrypt<JWTPayload>(token.value, env.SECRET_KEY);
-    const dbUser = await db.user.findUnique({
-      where: {
-        id: payload.payload.id,
-      },
-    });
-    user = dbUser ?? null;
-  }
+  const { user } = await getServerSession();
   return (
     <div className="flex items-center gap-3">
       {user ? (
-        <Link href="/api/logout" className={cn(buttonVariants())}>
-          Logout
-        </Link>
+        <LogoutButton />
       ) : (
         <Link href="/login" className={cn(buttonVariants())}>
           Login

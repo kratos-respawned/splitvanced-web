@@ -53,6 +53,7 @@ export default function LoginForm() {
           description: "You have been logged in",
         });
         router.push("/");
+        router.refresh();
       } else if (data.status === "unauthenticated") {
         toast({
           variant: "destructive",

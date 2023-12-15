@@ -6,6 +6,7 @@ import { JWTPayload } from "@/typings/email-types";
 import { db } from "./db";
 import { JOSEError } from "jose/errors";
 import { ClientUser } from "@/typings/signin-response-types";
+import { unstable_noStore } from "next/cache";
 class AuthError extends Error {}
 export const getServerSession = async (): Promise<
   | {
@@ -18,6 +19,7 @@ export const getServerSession = async (): Promise<
     }
 > => {
   try {
+    unstable_noStore();
     const token = cookies().get("token");
     if (!token) throw new AuthError("No token found");
     const data = await decrypt<JWTPayload>(token.value, env.SECRET_KEY);
