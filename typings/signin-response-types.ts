@@ -1,13 +1,7 @@
 export type SignInResponse =
   | {
       status: "authenticated";
-      user: {
-        id: string;
-        email: string;
-        name: string;
-        createdAt: Date;
-        updatedAt: Date;
-      };
+      user: ClientUser;
     }
   | {
       status: "unauthenticated";
@@ -17,3 +11,12 @@ export type SignInResponse =
       status: "unverified";
       error: string;
     };
+
+export type ClientUser = {
+  id: string;
+  name: string;
+  email: string;
+  createdAt: Date;
+  updatedAt: Date;
+  isVerified: boolean;
+};

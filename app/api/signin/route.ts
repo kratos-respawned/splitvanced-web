@@ -5,7 +5,7 @@ import { env } from "@/lib/env.mjs";
 import { APIErrorHandler } from "@/lib/error-handler";
 import { decrypt, encrypt } from "@/lib/jwt";
 import { resend } from "@/lib/resend";
-import { MailJWTPayload } from "@/typings/email-types";
+import { JWTPayload } from "@/typings/email-types";
 import { SignInResponse } from "@/validatiors/signinResponse-schema";
 import { signInValidator } from "@/validatiors/userschema";
 import { User } from "@prisma/client";
@@ -33,10 +33,7 @@ const ResponseFromOldUserHandler = async (user: User, password: string) => {
     return SignedResponse("unauthenticated", undefined, "Invalid password");
   }
   if (user.isVerified) {
-    const token = await encrypt<MailJWTPayload>(
-      { id: user.id },
-      env.SECRET_KEY
-    );
+    const token = await encrypt<JWTPayload>({ id: user.id }, env.SECRET_KEY);
     return SignedResponse("authenticated", user, undefined, {
       "Set-Cookie": `token=${token}; path=/; HttpOnly; Max-Age=${
         60 * 60 * 24 * 7
@@ -56,13 +53,11 @@ const ResponseFromNewUserHandler = async (email: string, password: string) => {
       name: email.split("@")[0],
       createdAt: new Date(),
       updatedAt: new Date(),
+      isVerified: true,
     },
   });
 
-  const token = await encrypt<MailJWTPayload>(
-    { id: newUser.id },
-    env.EMAIL_KEY
-  );
+  const token = await encrypt<JWTPayload>({ id: newUser.id }, env.EMAIL_KEY);
   // const mailResp = await resend.emails.send({
   //   from: "splitvanced@itsgaurav.co",
   //   to: [newUser.email],

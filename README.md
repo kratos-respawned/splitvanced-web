@@ -1,4 +1,4 @@
-<!-- run the following commands to start a docker container for pg -->
+#run the following commands to start a docker container for pg
 
 ```bash
 docker build -t my-postgres-image .

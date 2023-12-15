@@ -4,7 +4,7 @@ import { Button, buttonVariants } from "@/components/ui/button";
 import { ChangeTheme } from "@/components/ui/switch-theme";
 import { cookies } from "next/headers";
 import { decrypt } from "@/lib/jwt";
-import { MailJWTPayload } from "@/typings/email-types";
+import { JWTPayload } from "@/typings/email-types";
 import { env } from "@/lib/env.mjs";
 import { db } from "@/lib/db";
 import { User } from "@prisma/client";
@@ -35,7 +35,7 @@ const NavbarLogin = async () => {
   const token = cookies().get("token");
   unstable_noStore();
   if (token) {
-    const payload = await decrypt<MailJWTPayload>(token.value, env.SECRET_KEY);
+    const payload = await decrypt<JWTPayload>(token.value, env.SECRET_KEY);
     const dbUser = await db.user.findUnique({
       where: {
         id: payload.payload.id,

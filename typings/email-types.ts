@@ -1,3 +1,3 @@
-export type MailJWTPayload = {
+export type JWTPayload = {
   id: string;
 };
