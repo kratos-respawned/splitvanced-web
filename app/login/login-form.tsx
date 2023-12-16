@@ -26,6 +26,7 @@ import {
 } from "@/components/ui/form";
 import { SignInResponseSchema } from "@/validatiors/signinResponse-schema";
 import { useRouter } from "next/navigation";
+import { Loader2 } from "lucide-react";
 export default function LoginForm() {
   const { toast } = useToast();
   const router = useRouter();
@@ -104,14 +105,28 @@ export default function LoginForm() {
                 <FormItem className="">
                   <FormLabel>Password</FormLabel>
                   <FormControl>
-                    <Input placeholder="Something Secure" {...field} />
+                    <Input
+                      type="password"
+                      placeholder="Something Secure"
+                      {...field}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
-            <Button className="w-full" type="submit">
-              Submit
+            <Button
+              disabled={form.formState.isSubmitting}
+              className="w-full"
+              type="submit"
+            >
+              {form.formState.isSubmitting ? (
+                <span className="animate-spin ml-2">
+                  <Loader2 />
+                </span>
+              ) : (
+                <>Submit</>
+              )}
             </Button>
           </form>
         </Form>
