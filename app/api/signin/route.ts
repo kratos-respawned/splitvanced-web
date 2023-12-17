@@ -21,9 +21,8 @@ export async function POST(req: Request) {
   } catch (e) {
     let resp: SignInResponse;
     const errMessage = APIErrorHandler(e);
-    if (errMessage) {
-      return SignedResponse("unauthenticated", undefined, errMessage);
-    } else return SignedResponse("unauthenticated");
+
+    return SignedResponse("unauthenticated", undefined, errMessage);
   }
 }
 
@@ -88,9 +87,8 @@ const SignedResponse = (
   let resp: SignInResponse = {
     status: "unauthenticated",
     error: "Something went wrong",
-    token: null,
   };
-  let code: 200 | 400 | 500 = 500;
+  let code: 200 | 500 = 500;
   if (status === "authenticated" && user && token) {
     resp = {
       status: "authenticated",
@@ -101,21 +99,18 @@ const SignedResponse = (
         createdAt: String(user.createdAt),
         updatedAt: String(user.updatedAt),
       },
-      token,
     };
     code = 200;
   } else if (status === "unauthenticated" && error) {
     resp = {
       status: "unauthenticated",
       error,
-      token: null,
     };
     code = 200;
   } else if (status === "unverified" && error) {
     resp = {
       status: "unverified",
       error,
-      token: null,
     };
     code = 200;
   }
@@ -126,6 +121,8 @@ const SignedResponse = (
           "Set-Cookie": `token=${token}; path=/; HttpOnly; Max-Age=${
             60 * 60 * 24 * 7
           }`,
+          // for future use
+          // Authorization: `Bearer ${token}`,
         }
       : {},
   });
