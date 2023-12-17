@@ -11,19 +11,16 @@ const userSchema = z.object({
 const authenticatedSchema = z.object({
   status: z.literal("authenticated"),
   user: userSchema,
-  token: z.string(),
 });
 
 const unauthenticatedSchema = z.object({
   status: z.literal("unauthenticated"),
   error: z.string(),
-  token: z.string().nullable(),
 });
 
 const unverifiedSchema = z.object({
   status: z.literal("unverified"),
   error: z.string(),
-  token: z.string().nullable(),
 });
 
 export const SignInResponseSchema = z.union([

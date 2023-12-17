@@ -16,4 +16,5 @@ export const APIErrorHandler = (err: any) => {
   if (err instanceof PrismaClientKnownRequestError) {
     return err.message;
   }
+  return "Something went wrong";
 };

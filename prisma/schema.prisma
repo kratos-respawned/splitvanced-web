@@ -11,13 +11,24 @@ datasource db {
 }
 
 model User {
-  id         String   @id @default(uuid())
-  email      String   @unique
-  name       String
-  password   String
-  isVerified Boolean  @default(false)
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-  friends    User[]   @relation("Friendship")
-  friendOf   User[]   @relation("Friendship")
+  id               String          @id @default(uuid())
+  email            String          @unique
+  name             String
+  password         String
+  isVerified       Boolean         @default(false)
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+  friends          User[]          @relation("Friendship")
+  friendOf         User[]          @relation("Friendship")
+  sentRequests     FriendRequest[] @relation("FromFriendship")
+  receivedRequests FriendRequest[] @relation("ToFriendship")
+}
+
+model FriendRequest {
+  id        String   @id @default(uuid())
+  fromId    String
+  toId      String
+  to        User     @relation("ToFriendship", fields: [toId], references: [id])
+  from      User     @relation("FromFriendship", fields: [fromId], references: [id])
+  createdAt DateTime @default(now())
 }
