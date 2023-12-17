@@ -34,11 +34,7 @@ const ResponseFromOldUserHandler = async (user: User, password: string) => {
   }
   if (user.isVerified) {
     const token = await encrypt<JWTPayload>({ id: user.id }, env.SECRET_KEY);
-    return SignedResponse("authenticated", user, undefined, {
-      "Set-Cookie": `token=${token}; path=/; HttpOnly; Max-Age=${
-        60 * 60 * 24 * 7
-      }`,
-    });
+    return SignedResponse("authenticated", user, undefined, token);
   } else {
     return SignedResponse("unverified", undefined, "Please verify your email");
   }
@@ -87,14 +83,15 @@ const SignedResponse = (
   status: "unverified" | "authenticated" | "unauthenticated",
   user?: User,
   error?: string,
-  headers?: HeadersInit
+  token?: string
 ) => {
   let resp: SignInResponse = {
     status: "unauthenticated",
     error: "Something went wrong",
+    token: null,
   };
   let code: 200 | 400 | 500 = 500;
-  if (status === "authenticated" && user) {
+  if (status === "authenticated" && user && token) {
     resp = {
       status: "authenticated",
       user: {
@@ -104,20 +101,32 @@ const SignedResponse = (
         createdAt: String(user.createdAt),
         updatedAt: String(user.updatedAt),
       },
+      token,
     };
     code = 200;
   } else if (status === "unauthenticated" && error) {
     resp = {
       status: "unauthenticated",
       error,
+      token: null,
     };
-    code = 400;
+    code = 200;
   } else if (status === "unverified" && error) {
     resp = {
       status: "unverified",
       error,
+      token: null,
     };
     code = 200;
   }
-  return Response.json(resp, { status: code, headers });
+  return Response.json(resp, {
+    status: code,
+    headers: token
+      ? {
+          "Set-Cookie": `token=${token}; path=/; HttpOnly; Max-Age=${
+            60 * 60 * 24 * 7
+          }`,
+        }
+      : {},
+  });
 };

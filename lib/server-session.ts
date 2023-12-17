@@ -20,12 +20,17 @@ export const getServerSession = async (): Promise<
 > => {
   try {
     unstable_noStore();
-    const token = cookies().get("token");
+    const cookieList = cookies();
+    const token = cookieList.get("token");
     if (!token) throw new AuthError("No token found");
     const data = await decrypt<JWTPayload>(token.value, env.SECRET_KEY);
     if (!data.payload.id) throw new AuthError("Invalid token");
     const user = await db.user.findUnique({ where: { id: data.payload.id } });
-    if (!user) throw new AuthError("User not found");
+    if (!user) {
+      cookieList.delete("token");
+      throw new AuthError("User not found");
+    }
+
     return {
       user: {
         id: user.id,
