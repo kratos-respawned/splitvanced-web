@@ -13,7 +13,6 @@ export async function middleware(request: NextRequest) {
   const resp: SignInResponse = {
     status: "unauthenticated",
     error: "Please login",
-    token: null,
   };
 
   if (
