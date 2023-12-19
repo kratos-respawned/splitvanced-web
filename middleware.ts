@@ -4,6 +4,7 @@ import { decrypt } from "./lib/jwt";
 import { JWTPayload } from "./typings/email-types";
 import { env } from "./lib/env.mjs";
 import { SignInResponse } from "./validatiors/signinResponse-schema";
+import { APIErrorHandler } from "./lib/error-handler";
 export const config = {
   matcher: ["/api/:path*", "/dashboard/:path*"],
 };
@@ -26,9 +27,17 @@ export async function middleware(request: NextRequest) {
   if (!token) {
     return Response.json(resp);
   }
-  const payload = await decrypt<JWTPayload>(token.value, env.SECRET_KEY);
-  if (!payload.payload.id) {
-    return Response.json(resp);
+  try {
+    const payload = await decrypt<JWTPayload>(token.value, env.SECRET_KEY);
+    if (!payload.payload.id) {
+      return Response.json(resp);
+    }
+    return NextResponse.next();
+  } catch (error) {
+    const errMessage = APIErrorHandler(error);
+    return Response.json({
+      status: "unauthenticated",
+      error: errMessage,
+    });
   }
-  return NextResponse.next();
 }
