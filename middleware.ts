@@ -5,6 +5,7 @@ import { JWTPayload } from "./typings/email-types";
 import { env } from "./lib/env.mjs";
 import { SignInResponse } from "./validatiors/signinResponse-schema";
 import { APIErrorHandler } from "./lib/error-handler";
+import { JOSEError } from "jose/errors";
 export const config = {
   matcher: ["/api/:path*", "/dashboard/:path*"],
 };
@@ -34,7 +35,13 @@ export async function middleware(request: NextRequest) {
     }
     return NextResponse.next();
   } catch (error) {
-    const errMessage = APIErrorHandler(error);
+    let errMessage: string;
+    if (error instanceof JOSEError) {
+      if (error.code === "ERR_JWT_EXPIRED") errMessage = "Token Expired";
+      errMessage = "Invalid Token";
+    } else {
+      errMessage = "Something went wrong";
+    }
     return Response.json({
       status: "unauthenticated",
       error: errMessage,

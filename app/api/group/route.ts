@@ -2,8 +2,9 @@ import { AuthError } from "@/errors/auth-error";
 import { db } from "@/lib/db";
 import { APIErrorHandler } from "@/lib/error-handler";
 import { getServerSession } from "@/lib/server-session";
+import { getGroup } from "./groupData";
 
-export const GET = async (req: Response) => {
+export const GET = async (req: Request) => {
   try {
     const groups = await getGroup();
     return Response.json({
@@ -20,7 +21,7 @@ export const GET = async (req: Response) => {
     });
   }
 };
-export const POST = async (req: Response) => {
+export const POST = async (req: Request) => {
   const json = await req.json();
   try {
     const { user, error } = await getServerSession();
@@ -48,9 +49,4 @@ export const POST = async (req: Response) => {
       error: errMessage,
     });
   }
-};
-export const getGroup = async () => {
-  const { user, error } = await getServerSession();
-  if (!user) throw new AuthError(error);
-  return await db.group.findMany({});
 };

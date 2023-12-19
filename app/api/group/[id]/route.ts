@@ -2,9 +2,10 @@ import { AuthError } from "@/errors/auth-error";
 import { db } from "@/lib/db";
 import { APIErrorHandler } from "@/lib/error-handler";
 import { getServerSession } from "@/lib/server-session";
+import { getGroupData } from "../groupData";
 
 export const GET = async (
-  req: Response,
+  req: Request,
   { params }: { params: { id: string } }
 ) => {
   try {
@@ -27,7 +28,7 @@ export const GET = async (
 };
 
 export const PATCH = async (
-  req: Response,
+  req: Request,
   { params }: { params: { id: string } }
 ) => {
   const json = await req.json();
@@ -78,7 +79,7 @@ export const PATCH = async (
 };
 
 export const DELETE = async (
-  req: Response,
+  req: Request,
   { params }: { params: { id: string } }
 ) => {
   try {
@@ -110,16 +111,4 @@ export const DELETE = async (
           error: errMessage,
         });
   }
-};
-
-export const getGroupData = async (id: string) => {
-  const { user, error } = await getServerSession();
-  if (!user) throw new AuthError(error);
-  return await db.group.findUnique({
-    where: { id: id },
-    include: {
-      expenses: true,
-      members: true,
-    },
-  });
 };
