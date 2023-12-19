@@ -11,17 +11,63 @@ datasource db {
 }
 
 model User {
-  id               String          @id @default(uuid())
-  email            String          @unique
+  id               String             @id @default(uuid())
+  email            String             @unique
   name             String
   password         String
-  isVerified       Boolean         @default(false)
-  createdAt        DateTime        @default(now())
-  updatedAt        DateTime        @updatedAt
-  friends          User[]          @relation("Friendship")
-  friendOf         User[]          @relation("Friendship")
-  sentRequests     FriendRequest[] @relation("FromFriendship")
-  receivedRequests FriendRequest[] @relation("ToFriendship")
+  isVerified       Boolean            @default(false)
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+  friends          User[]             @relation("Friendship")
+  friendOf         User[]             @relation("Friendship")
+  sentRequests     FriendRequest[]    @relation("FromFriendship")
+  receivedRequests FriendRequest[]    @relation("ToFriendship")
+  groups           Group[]            @relation("GroupMembership")
+  PayersAndAmounts PayersAndAmounts[]
+  PayeeAndAmount   PayeeAndAmount[]
+}
+
+model Expense {
+  id               String             @id @default(uuid())
+  name             String
+  amount           Float
+  payersAndAmounts PayersAndAmounts[]
+  payeeAndAmount   PayeeAndAmount[]
+  groupId          String
+  group            Group              @relation(fields: [groupId], references: [id])
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+}
+
+model PayersAndAmounts {
+  id        String   @id @default(uuid())
+  payerId   String
+  payer     User     @relation(fields: [payerId], references: [id])
+  expenseId String
+  expense   Expense  @relation(fields: [expenseId], references: [id])
+  amount    Float
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model PayeeAndAmount {
+  id        String   @id @default(uuid())
+  payeeId   String
+  payee     User     @relation(fields: [payeeId], references: [id])
+  expenseId String
+  expense   Expense  @relation(fields: [expenseId], references: [id])
+  amount    Float
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Group {
+  id        String    @id @default(uuid())
+  name      String
+  members   User[]    @relation("GroupMembership")
+  expenses  Expense[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
 }
 
 model FriendRequest {
