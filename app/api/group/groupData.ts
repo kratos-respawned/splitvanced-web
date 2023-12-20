@@ -6,7 +6,7 @@ export const getGroupData = async (id: string) => {
   const { user, error } = await getServerSession();
   if (!user) throw new AuthError(error);
   return await db.group.findUnique({
-    where: { id: id },
+    where: { id: id, members: { some: { id: user.id } } },
     include: {
       expenses: true,
       members: true,
