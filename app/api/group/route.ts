@@ -3,6 +3,9 @@ import { db } from "@/lib/db";
 import { APIErrorHandler } from "@/lib/error-handler";
 import { getServerSession } from "@/lib/server-session";
 import { getGroup } from "./groupData";
+import { groupSchema } from "@/validatiors/group-schemas";
+import { revalidatePath, revalidateTag } from "next/cache";
+import { NextRequest } from "next/server";
 
 export const GET = async (req: Request) => {
   try {
@@ -21,14 +24,15 @@ export const GET = async (req: Request) => {
     });
   }
 };
-export const POST = async (req: Request) => {
+export const POST = async (req: NextRequest) => {
   const json = await req.json();
   try {
+    const { name: groupName } = groupSchema.parse(json);
     const { user, error } = await getServerSession();
     if (!user) throw new AuthError(error);
     const newGroup = await db.group.create({
       data: {
-        name: json.name,
+        name: groupName,
         members: {
           connect: {
             id: user.id,
@@ -36,6 +40,7 @@ export const POST = async (req: Request) => {
         },
       },
     });
+
     return Response.json({
       status: "success",
       data: newGroup,

@@ -1,3 +1,5 @@
-export default function Page() {
-  return <div>Dashboard</div>;
+import { permanentRedirect } from "next/navigation";
+
+export default async function Page() {
+  permanentRedirect("/dashboard/groups");
 }
