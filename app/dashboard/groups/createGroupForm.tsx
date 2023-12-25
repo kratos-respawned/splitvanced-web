@@ -55,7 +55,7 @@ export function CreateGroupForm() {
             <DialogTitle>Create Group</DialogTitle>
             <DialogDescription>
               Enter the name of the group you want to create. Click save when
-              you're done.
+              you&apos;re done.
             </DialogDescription>
           </DialogHeader>
           <ProfileForm />
@@ -74,7 +74,7 @@ export function CreateGroupForm() {
           <DrawerTitle>Create Group</DrawerTitle>
           <DrawerDescription>
             Enter the name of the group you want to create. Click save when
-            you're done.
+            you&apos;re done.
           </DrawerDescription>
         </DrawerHeader>
         <ProfileForm className="px-4" />
