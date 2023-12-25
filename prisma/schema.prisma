@@ -77,4 +77,5 @@ model FriendRequest {
   to        User     @relation("ToFriendship", fields: [toId], references: [id])
   from      User     @relation("FromFriendship", fields: [fromId], references: [id])
   createdAt DateTime @default(now())
+  @@unique([fromId, toId])
 }
